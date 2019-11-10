@@ -8,14 +8,18 @@ const uint8_t kMatrixHeight = 8;
 
 CRGB leds[NUM_LEDS];
 
-int16_t xt = 0; 
-uint16_t ht = 0;
+// For efficient memory usage, these are globals shared among patterns.
+int16_t xt = 0;  // Used for horizontal scrolling effects
+uint16_t ht = 0; // Used for color cycling
+uint16_t tt = 0; // Frame count to feed into the above
+
+// PATTERN: Sinus
 const uint16_t xScale = 65536 / kMatrixWidth;
 const uint16_t yScale = 16384 / kMatrixHeight;
 
-uint16_t tt = 0;
 void beforeSinus() {
-    xt = sin16(tt * 40) * 4;
+  xt = sin16(tt * 40) * 4;
+  ht += 15;
 }
 
 void renderSinus() {
@@ -36,11 +40,9 @@ void renderSinus() {
 
     leds[index] = CHSV(h >> 6, 255, v >> 6);
   }
- 
-  FastLED.show();
-  ht += 15;
 }
 
+// Driver program
 void setup() {
   FastLED.addLeds<WS2812B, DATA_PIN, GRB>(leds, NUM_LEDS);
   FastLED.setBrightness(100);
@@ -49,6 +51,7 @@ void setup() {
 void loop() {
   beforeSinus();
   renderSinus();
+  FastLED.show();
 
   tt += 1;
 }
