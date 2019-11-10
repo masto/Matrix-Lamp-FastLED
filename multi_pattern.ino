@@ -13,6 +13,20 @@ int16_t xt = 0;  // Used for horizontal scrolling effects
 uint16_t ht = 0; // Used for color cycling
 uint16_t tt = 0; // Frame count to feed into the above
 
+// Global utilities
+inline uint16_t mapY(uint8_t x, uint8_t y) {
+  return x & 1 ? kMatrixHeight - 1 - y : y;
+}
+
+inline uint16_t mapXY(uint8_t x, uint8_t y) {
+  return x * kMatrixHeight + mapY(x, y);
+}
+
+void toXY(uint16_t index, uint8_t &x, uint8_t &y) {
+  x = index / kMatrixHeight;
+  y = mapY(x, index % kMatrixHeight);
+}
+
 // PATTERN: Sinus
 const uint16_t xScale = 65536 / kMatrixWidth;
 const uint16_t yScale = 16384 / kMatrixHeight;
@@ -25,8 +39,7 @@ void beforeSinus() {
 void renderSinus() {
   for (uint16_t index = 0; index < NUM_LEDS; index++) {
     uint16_t x = index / kMatrixHeight;
-    int16_t y = index % kMatrixHeight;
-    if (x & 1) y = kMatrixHeight - 1 - y;
+    int16_t y = mapY(x, index % kMatrixHeight);
 
     x *= xScale;
     y *= yScale;
@@ -46,13 +59,9 @@ void renderSinus() {
 #define NUM_WANDERERS 50
 const uint8_t kWanderSpeed = 100;
 
-uint8_t mapY(uint8_t x, uint8_t y) {
-  return x & 1 ? kMatrixHeight - 1 - y : y;
-}
-
 uint16_t wander(uint16_t p) {
-  uint8_t x = p / kMatrixHeight;
-  uint8_t y = mapY(x, p % kMatrixHeight);
+  uint8_t x, y;
+  toXY(p, x, y);
 
   uint8_t r = random(kWanderSpeed);
   if (r == 0) {
@@ -69,7 +78,7 @@ uint16_t wander(uint16_t p) {
     y = constrain(y - 1, 0, kMatrixHeight - 1);
   }
 
-  return x * kMatrixHeight + mapY(x, y);
+  return mapXY(x, y);
 }
 
 uint16_t wars[NUM_WANDERERS];
@@ -104,10 +113,10 @@ void beforeSlideUp() {
   for (uint8_t x = 0; x < kMatrixWidth; x++) {
     // slide up
     for (uint8_t y = 0; y < kMatrixHeight - 1; y++) {
-      leds[x * kMatrixHeight + mapY(x, y)] = leds[x * kMatrixHeight + mapY(x, y + 1)];
+      leds[mapXY(x, y)] = leds[mapXY(x, y + 1)];
     }
     // new ones enter at the bottom
-    leds[x * kMatrixHeight + mapY(x, kMatrixHeight - 1)] = random(10) < 2 ? CHSV(random(256), 255, 255) : CHSV(0, 0, 0);
+    leds[mapXY(x, kMatrixHeight - 1)] = random(10) < 2 ? CHSV(random(256), 255, 255) : CHSV(0, 0, 0);
   }
 }
 
@@ -120,12 +129,12 @@ void setup() {
   FastLED.addLeds<WS2812B, DATA_PIN, GRB>(leds, NUM_LEDS);
   FastLED.setBrightness(30);
 
-  setupSlideUp();
+  setupWander();
 }
 
 void loop() {
-  beforeSlideUp();
-  renderSlideUp();
+  beforeWander();
+  renderWander();
 
   FastLED.show();
   tt += 1;
