@@ -12,7 +12,13 @@ int16_t xt = 0;
 uint16_t ht = 0;
 const uint16_t xScale = 65536 / kMatrixWidth;
 const uint16_t yScale = 16384 / kMatrixHeight;
-void renderFast() {
+
+uint16_t tt = 0;
+void beforeSinus() {
+    xt = sin16(tt * 40) * 4;
+}
+
+void renderSinus() {
   for (uint16_t index = 0; index < NUM_LEDS; index++) {
     uint16_t x = index / kMatrixHeight;
     int16_t y = index % kMatrixHeight;
@@ -40,10 +46,9 @@ void setup() {
   FastLED.setBrightness(100);
 }
 
-uint16_t tt = 0;
 void loop() {
-  xt = sin16(tt * 40) * 4;
-  renderFast();
+  beforeSinus();
+  renderSinus();
 
   tt += 1;
 }
