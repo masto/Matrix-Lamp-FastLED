@@ -42,16 +42,71 @@ void renderSinus() {
   }
 }
 
+// PATTERN: Wander
+#define NUM_WANDERERS 50
+const uint8_t kWanderSpeed = 100;
+
+uint8_t mapY(uint8_t x, uint8_t y) {
+  return x & 1 ? kMatrixHeight - 1 - y : y;
+}
+
+uint16_t wander(uint16_t p) {
+  uint8_t x = p / kMatrixHeight;
+  uint8_t y = mapY(x, p % kMatrixHeight);
+
+  uint8_t r = random(kWanderSpeed);
+  if (r == 0) {
+    // Wraps around a cylinder.
+    x = (x + 1) % kMatrixWidth;
+  }
+  else if (r == 1) {
+    x = x == 0 ? kMatrixWidth - 1 : x - 1;
+  }
+  else if (r == 2) {
+    y = constrain(y + 1, 0, kMatrixHeight - 1);
+  }
+  else if (r == 3) {
+    y = constrain(y - 1, 0, kMatrixHeight - 1);
+  }
+
+  return x * kMatrixHeight + mapY(x, y);
+}
+
+uint16_t wars[NUM_WANDERERS];
+
+void setupWander() {
+  randomSeed(analogRead(0));
+  for (uint8_t i = 0; i < NUM_WANDERERS; i++) wars[i] = random(NUM_LEDS);
+}
+
+void beforeWander() {
+  fill_solid(leds, NUM_LEDS, CRGB::Black);
+
+  uint8_t gHue = 0;
+  uint8_t gHueDelta = 256 * 1 / NUM_WANDERERS;
+  for (uint8_t i = 0; i < NUM_WANDERERS; i++) {
+    wars[i] = wander(wars[i]);
+    leds[wars[i]] = CHSV(gHue, 255, 255);
+    gHue += gHueDelta;
+  }
+}
+
+void renderWander() {
+  delay(25);
+}
+
 // Driver program
 void setup() {
   FastLED.addLeds<WS2812B, DATA_PIN, GRB>(leds, NUM_LEDS);
   FastLED.setBrightness(100);
+
+  setupWander();
 }
 
 void loop() {
-  beforeSinus();
-  renderSinus();
-  FastLED.show();
+  beforeWander();
+  renderWander();
 
+  FastLED.show();
   tt += 1;
 }
