@@ -91,21 +91,41 @@ void beforeWander() {
   }
 }
 
-void renderWander() {
+void renderWander() {;
   delay(25);
+}
+
+// PATTERN: SlideUp
+void setupSlideUp() {  randomSeed(analogRead(0));
+
+}
+
+void beforeSlideUp() {
+  for (uint8_t x = 0; x < kMatrixWidth; x++) {
+    // slide up
+    for (uint8_t y = 0; y < kMatrixHeight - 1; y++) {
+      leds[x * kMatrixHeight + mapY(x, y)] = leds[x * kMatrixHeight + mapY(x, y + 1)];
+    }
+    // new ones enter at the bottom
+    leds[x * kMatrixHeight + mapY(x, kMatrixHeight - 1)] = random(10) < 2 ? CHSV(random(256), 255, 255) : CHSV(0, 0, 0);
+  }
+}
+
+void renderSlideUp() {
+  delay(90);
 }
 
 // Driver program
 void setup() {
   FastLED.addLeds<WS2812B, DATA_PIN, GRB>(leds, NUM_LEDS);
-  FastLED.setBrightness(100);
+  FastLED.setBrightness(30);
 
-  setupWander();
+  setupSlideUp();
 }
 
 void loop() {
-  beforeWander();
-  renderWander();
+  beforeSlideUp();
+  renderSlideUp();
 
   FastLED.show();
   tt += 1;
