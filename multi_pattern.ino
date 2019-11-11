@@ -5,6 +5,7 @@
 const uint8_t kMatrixWidth = 32;
 const uint8_t kMatrixHeight = 8;
 #define NUM_LEDS (kMatrixWidth * kMatrixHeight)
+#define SEQUENCE_TIME (5 * 1000)
 
 CRGB leds[NUM_LEDS];
 
@@ -31,9 +32,11 @@ void toXY(uint16_t index, uint8_t &x, uint8_t &y) {
 const uint16_t xScale = 65536 / kMatrixWidth;
 const uint16_t yScale = 16384 / kMatrixHeight;
 
-void beforeSinus() {
+unsigned long beforeSinus() {
   xt = sin16(tt * 40) * 4;
   ht += 15;
+
+  return 0;
 }
 
 void renderSinus(uint16_t index, uint16_t x, int16_t y) {
@@ -83,7 +86,7 @@ void setupWander() {
   for (uint8_t i = 0; i < NUM_WANDERERS; i++) wars[i] = random(NUM_LEDS);
 }
 
-void beforeWander() {
+unsigned long beforeWander() {
   fill_solid(leds, NUM_LEDS, CRGB::Black);
 
   uint8_t gHue = 0;
@@ -94,10 +97,7 @@ void beforeWander() {
     gHue += gHueDelta;
   }
 
-  delay(25);
-}
-
-void renderWander(uint16_t index, uint8_t x, uint8_t y) {
+  return 25;
 }
 
 // PATTERN: SlideUp
@@ -105,7 +105,7 @@ void setupSlideUp() {
   randomSeed(analogRead(0));
 }
 
-void beforeSlideUp() {
+unsigned long beforeSlideUp() {
   for (uint8_t x = 0; x < kMatrixWidth; x++) {
     // slide up
     for (uint8_t y = 0; y < kMatrixHeight - 1; y++) {
@@ -114,32 +114,61 @@ void beforeSlideUp() {
     // new ones enter at the bottom
     leds[mapXY(x, kMatrixHeight - 1)] = random(10) < 2 ? CHSV(random(256), 255, 255) : CHSV(0, 0, 0);
   }
+
+  return 90;
 }
 
-void renderSlideUp() {
-  delay(90);
-}
+// Pattern catalog
+struct pattern {
+  void (*setup)(void);
+  unsigned long (*beforeRender)(void);
+  void (*renderXY)(uint16_t index, uint16_t x, int16_t y);
+};
+
+pattern patterns[] = {
+  { NULL,         beforeSinus,   renderSinus },
+  { setupWander,  beforeWander,  NULL },
+  { setupSlideUp, beforeSlideUp, NULL }
+};
+
+const size_t NUM_PATTERNS = sizeof patterns / sizeof *patterns;
 
 // Driver program
+size_t pi = 0;
+unsigned long startTime = millis();
 void setup() {
   FastLED.addLeds<WS2812B, DATA_PIN, GRB>(leds, NUM_LEDS);
   FastLED.setBrightness(30);
-
-  //setupWander();
 }
 
 void loop() {
-  beforeSinus();
+  if (tt == 0) {
+    // Start new pattern
+    fill_solid(leds, NUM_LEDS, CRGB::Black);
+    if (*patterns[pi].setup) (*patterns[pi].setup)();
+  }
 
-  // call the renderXY function for each pixel
-  uint16_t index = 0;
-  for (uint8_t x = 0; x < kMatrixWidth; x++) {
-    for (uint8_t y = 0; y < kMatrixHeight; y++) {
-      renderSinus(index, x, mapY(x, y));
-      index++;
+  unsigned long delayms = 0;
+  if (*patterns[pi].beforeRender) delayms = (*patterns[pi].beforeRender)();
+
+  if (*patterns[pi].renderXY) {
+    // call the renderXY function for each pixel
+    uint16_t index = 0;
+    for (uint8_t x = 0; x < kMatrixWidth; x++) {
+      for (uint8_t y = 0; y < kMatrixHeight; y++) {
+        (*patterns[pi].renderXY)(index, x, mapY(x, y));
+        index++;
+      }
     }
   }
 
   FastLED.show();
+  delay(delayms);
   tt += 1;
+
+  if (millis() - startTime > SEQUENCE_TIME) {
+    if (++pi > NUM_PATTERNS) pi = 0;
+    startTime = millis();
+    tt = 0;
+  }
 }
