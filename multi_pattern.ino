@@ -36,23 +36,18 @@ void beforeSinus() {
   ht += 15;
 }
 
-void renderSinus() {
-  for (uint16_t index = 0; index < NUM_LEDS; index++) {
-    uint16_t x = index / kMatrixHeight;
-    int16_t y = mapY(x, index % kMatrixHeight);
+void renderSinus(uint16_t index, uint16_t x, int16_t y) {
+  x *= xScale;
+  y *= yScale;
 
-    x *= xScale;
-    y *= yScale;
+  // Squeeze vertically just a little bit
+  y = (y - 8192) * 1.4 + 9830;
 
-    // Squeeze vertically just a little bit
-    y = (y - 8192) * 1.4 + 9830;
+  int16_t w = (int16_t)(sin16((x + xt) * 3) >> 2) + 8192;
+  uint16_t v = constrain(16384 - (w > y ? w - y : y - w)*2, 0, 16384);
+  uint16_t h = constrain(16384 - (w > y ? w - y : y - w)/2, 0, 16384) + ht;
 
-    int16_t w = (int16_t)(sin16((x + xt) * 3) >> 2) + 8192;
-    uint16_t v = constrain(16384 - (w > y ? w - y : y - w)*2, 0, 16384);
-    uint16_t h = constrain(16384 - (w > y ? w - y : y - w)/2, 0, 16384) + ht;
-
-    leds[index] = CHSV(h >> 6, 255, v >> 6);
-  }
+  leds[index] = CHSV(h >> 6, 255, v >> 6);
 }
 
 // PATTERN: Wander
@@ -98,15 +93,16 @@ void beforeWander() {
     leds[wars[i]] = CHSV(gHue, 255, 255);
     gHue += gHueDelta;
   }
-}
 
-void renderWander() {;
   delay(25);
 }
 
-// PATTERN: SlideUp
-void setupSlideUp() {  randomSeed(analogRead(0));
+void renderWander(uint16_t index, uint8_t x, uint8_t y) {
+}
 
+// PATTERN: SlideUp
+void setupSlideUp() {
+  randomSeed(analogRead(0));
 }
 
 void beforeSlideUp() {
@@ -129,12 +125,20 @@ void setup() {
   FastLED.addLeds<WS2812B, DATA_PIN, GRB>(leds, NUM_LEDS);
   FastLED.setBrightness(30);
 
-  setupWander();
+  //setupWander();
 }
 
 void loop() {
-  beforeWander();
-  renderWander();
+  beforeSinus();
+
+  // call the renderXY function for each pixel
+  uint16_t index = 0;
+  for (uint8_t x = 0; x < kMatrixWidth; x++) {
+    for (uint8_t y = 0; y < kMatrixHeight; y++) {
+      renderSinus(index, x, mapY(x, y));
+      index++;
+    }
+  }
 
   FastLED.show();
   tt += 1;
