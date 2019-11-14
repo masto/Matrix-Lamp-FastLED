@@ -5,7 +5,7 @@
 const uint8_t kMatrixWidth = 32;
 const uint8_t kMatrixHeight = 8;
 #define NUM_LEDS (kMatrixWidth * kMatrixHeight)
-const unsigned long SEQUENCE_TIME = 15 * 1000;
+const unsigned long SEQUENCE_TIME = 60L * 1000L;
 
 CRGB leds[NUM_LEDS];
 
@@ -196,7 +196,7 @@ void loop() {
   tt += 1;
 
   unsigned long m = millis();
-  if (m - startTime > SEQUENCE_TIME) {
+  if (m - startTime >= SEQUENCE_TIME) {
     if (++pi > NUM_PATTERNS) pi = 0;
     startTime = m;
     tt = 0;
