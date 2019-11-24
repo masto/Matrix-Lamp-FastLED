@@ -2,10 +2,10 @@
 
 #define DATA_PIN 6
 
-const uint8_t kMatrixWidth = 32;
-const uint8_t kMatrixHeight = 8;
-#define NUM_LEDS (kMatrixWidth * kMatrixHeight)
-const unsigned long SEQUENCE_TIME = 60L * 1000L;
+#define WIDTH 32
+#define HEIGHT 8
+#define NUM_LEDS (WIDTH * HEIGHT)
+#define SEQUENCE_TIME (60L * 1000L)
 
 CRGB leds[NUM_LEDS];
 
@@ -16,21 +16,21 @@ uint16_t tt = 0; // Frame count to feed into the above
 
 // Global utilities
 inline uint16_t mapY(uint8_t x, uint8_t y) {
-  return x & 1 ? kMatrixHeight - 1 - y : y;
+  return x & 1 ? HEIGHT - 1 - y : y;
 }
 
 inline uint16_t mapXY(uint8_t x, uint8_t y) {
-  return x * kMatrixHeight + mapY(x, y);
+  return x * HEIGHT + mapY(x, y);
 }
 
 void toXY(uint16_t index, uint8_t &x, uint8_t &y) {
-  x = index / kMatrixHeight;
-  y = mapY(x, index % kMatrixHeight);
+  x = index / HEIGHT;
+  y = mapY(x, index % HEIGHT);
 }
 
 // PATTERN: Sinus
-const uint16_t xScale = 65536 / kMatrixWidth;
-const uint16_t yScale = 16384 / kMatrixHeight;
+const uint16_t xScale = 65536 / WIDTH;
+const uint16_t yScale = 16384 / HEIGHT;
 
 unsigned long beforeSinus() {
   xt = sin16(tt * 40) * 4;
@@ -64,16 +64,16 @@ uint16_t wander(uint16_t p) {
   uint8_t r = random(kWanderSpeed);
   if (r == 0) {
     // Wraps around a cylinder.
-    x = (x + 1) % kMatrixWidth;
+    x = (x + 1) % WIDTH;
   }
   else if (r == 1) {
-    x = x == 0 ? kMatrixWidth - 1 : x - 1;
+    x = x == 0 ? WIDTH - 1 : x - 1;
   }
   else if (r == 2) {
-    y = constrain(y + 1, 0, kMatrixHeight - 1);
+    y = constrain(y + 1, 0, HEIGHT - 1);
   }
   else if (r == 3) {
-    y = constrain(y - 1, 0, kMatrixHeight - 1);
+    y = constrain(y - 1, 0, HEIGHT - 1);
   }
 
   return mapXY(x, y);
@@ -101,20 +101,20 @@ unsigned long beforeWander() {
 
 // PATTERN: SlideUp
 unsigned long beforeSlideUp() {
-  for (uint8_t x = 0; x < kMatrixWidth; x++) {
+  for (uint8_t x = 0; x < WIDTH; x++) {
     // slide up
-    for (uint8_t y = 0; y < kMatrixHeight - 1; y++) {
+    for (uint8_t y = 0; y < HEIGHT - 1; y++) {
       leds[mapXY(x, y)] = leds[mapXY(x, y + 1)];
     }
     // new ones enter at the bottom
-    leds[mapXY(x, kMatrixHeight - 1)] = random(10) < 2 ? CHSV(random(256), 255, 255) : CHSV(0, 0, 0);
+    leds[mapXY(x, HEIGHT - 1)] = random(10) < 2 ? CHSV(random(256), 255, 255) : CHSV(0, 0, 0);
   }
 
   return 90;
 }
 
 // PATTERN: Bounce
-int16_t cx = 0, cy = 0, cx2 = 0, cy2 = kMatrixHeight - 1;
+int16_t cx = 0, cy = 0, cx2 = 0, cy2 = HEIGHT - 1;
 int8_t dx = 1, dy = 1, dx2 = 1, dy2 = -1;
 unsigned long beforeBounce() {
   if (++xt > 8) {
@@ -122,19 +122,19 @@ unsigned long beforeBounce() {
 
     leds[mapXY(cx, cy)] = CHSV(sin8(tt / 31), 255, 255);
     cx += dx;
-    if (cx < 0) cx += kMatrixWidth;
-    if (cx >= kMatrixWidth) cx -= kMatrixWidth;
+    if (cx < 0) cx += WIDTH;
+    if (cx >= WIDTH) cx -= WIDTH;
     if (random(100) < 2) dx = -dx;
     cy += dy;
-    if (cy >= kMatrixHeight - 1 || cy <= 0) dy = -dy;
+    if (cy >= HEIGHT - 1 || cy <= 0) dy = -dy;
 
     leds[mapXY(cx2, cy2)] = CHSV(sin8(tt / 47) + 99, 255, 255);
     cx2 += dx2;
-    if (cx2 < 0) cx2 += kMatrixWidth;
-    if (cx2 >= kMatrixWidth) cx2 -= kMatrixWidth;
+    if (cx2 < 0) cx2 += WIDTH;
+    if (cx2 >= WIDTH) cx2 -= WIDTH;
     if (random(100) < 2) dx2 = -dx2;
     cy2 += dy2;
-    if (cy2 >= kMatrixHeight - 1 || cy2 <= 0) dy2 = -dy2;
+    if (cy2 >= HEIGHT - 1 || cy2 <= 0) dy2 = -dy2;
   }
   else {
     leds[mapXY(cx, cy)] = CRGB::Black;
@@ -145,24 +145,24 @@ unsigned long beforeBounce() {
 }
 
 // PATTERN: Rain
-int16_t cols[kMatrixWidth];
-uint8_t speed[kMatrixWidth];
-uint8_t color[kMatrixWidth];
+int16_t cols[WIDTH];
+uint8_t speed[WIDTH];
+uint8_t color[WIDTH];
 
 void setupRain() {
-  for (uint8_t x = 0; x < kMatrixWidth; x++) {
+  for (uint8_t x = 0; x < WIDTH; x++) {
     cols[x] = -1;
   }
 }
 
 unsigned long beforeRain() {
-  for (uint8_t x = 0; x < kMatrixWidth; x++)
+  for (uint8_t x = 0; x < WIDTH; x++)
     if (cols[x] >= 0 && tt % speed[x] == 0)
-      if (++cols[x] >= kMatrixHeight)
+      if (++cols[x] >= HEIGHT)
         cols[x] = -1;
 
   if (random(40) < 4) {
-    uint8_t c = random(kMatrixWidth);
+    uint8_t c = random(WIDTH);
     if (cols[c] == -1) {
       cols[c] = 0;
       speed[c] = 5 + random(7);
@@ -234,8 +234,8 @@ void loop() {
   if (*patterns[pi].renderXY) {
     // call the renderXY function for each pixel
     uint16_t index = 0;
-    for (uint8_t x = 0; x < kMatrixWidth; x++) {
-      for (uint8_t y = 0; y < kMatrixHeight; y++) {
+    for (uint8_t x = 0; x < WIDTH; x++) {
+      for (uint8_t y = 0; y < HEIGHT; y++) {
         (*patterns[pi].renderXY)(index, x, mapY(x, y));
         index++;
       }
