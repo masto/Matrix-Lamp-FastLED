@@ -144,6 +144,42 @@ unsigned long beforeBounce() {
   return 0;
 }
 
+// PATTERN: Rain
+int16_t cols[kMatrixWidth];
+uint8_t speed[kMatrixWidth];
+uint8_t color[kMatrixWidth];
+
+void setupRain() {
+  for (uint8_t x = 0; x < kMatrixWidth; x++) {
+    cols[x] = -1;
+  }
+}
+
+unsigned long beforeRain() {
+  for (uint8_t x = 0; x < kMatrixWidth; x++)
+    if (cols[x] >= 0 && tt % speed[x] == 0)
+      if (++cols[x] >= kMatrixHeight)
+        cols[x] = -1;
+
+  if (random(40) < 4) {
+    uint8_t c = random(kMatrixWidth);
+    if (cols[c] == -1) {
+      cols[c] = 0;
+      speed[c] = 5 + random(7);
+      color[c] = 130 + random(33);
+    }
+  }
+
+  return 0;
+}
+
+void renderRain(uint16_t index, uint16_t x, int16_t y) {
+  uint8_t h = color[x];
+  uint8_t s = 255;
+  uint8_t v = cols[x] == 0 ? 255 : 255 - 32 * (cols[x] - 1);
+  leds[index] = CHSV(h, s, cols[x] == y ? v : 0);
+}
+
 // Pattern catalog
 struct pattern {
   void (*setup)(void);
@@ -155,7 +191,8 @@ pattern patterns[] = {
   { NULL,         beforeBounce,  NULL },
   { NULL,         beforeSinus,   renderSinus },
   { setupWander,  beforeWander,  NULL },
-  { NULL,         beforeSlideUp, NULL }
+  { NULL,         beforeSlideUp, NULL },
+  { setupRain,    beforeRain,    renderRain }
 };
 
 const size_t NUM_PATTERNS = sizeof patterns / sizeof *patterns;
