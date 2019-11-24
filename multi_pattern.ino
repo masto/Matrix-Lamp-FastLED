@@ -204,6 +204,7 @@ void setup() {
   FastLED.addLeds<WS2812B, DATA_PIN, GRB>(leds, NUM_LEDS);
   FastLED.setBrightness(30);
   startTime = millis();
+  randomSeed(analogRead(0));
   pi = random(NUM_PATTERNS);
 }
 
