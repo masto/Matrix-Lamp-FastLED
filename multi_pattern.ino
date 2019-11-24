@@ -201,6 +201,11 @@ const size_t NUM_PATTERNS = sizeof patterns / sizeof *patterns;
 size_t pi;
 unsigned long startTime;
 void setup() {
+#if DEBUG_ENABLE
+  Serial.begin(115200);
+  Serial.print(F("NUM_PATTERNS = "));
+  Serial.println(NUM_PATTERNS);
+#endif
   FastLED.addLeds<WS2812B, DATA_PIN, GRB>(leds, NUM_LEDS);
   FastLED.setBrightness(30);
   startTime = millis();
@@ -211,6 +216,10 @@ void setup() {
 void loop() {
   if (tt == 0) {
     // Start new pattern
+#if DEBUG_ENABLE
+    Serial.print(F("Starting pattern "));
+    Serial.println(pi);
+#endif
     fill_solid(leds, NUM_LEDS, CRGB::Black);
     randomSeed(analogRead(0));
     if (*patterns[pi].setup) (*patterns[pi].setup)();
@@ -236,6 +245,18 @@ void loop() {
 
   unsigned long m = millis();
   if (m - startTime > SEQUENCE_TIME) {
+#if DEBUG_ENABLE
+    Serial.print(F("End pattern "));
+    Serial.print(pi);
+    Serial.print(F(": Time "));
+    Serial.print(m);
+    Serial.print(F(" - "));
+    Serial.print(startTime);
+    Serial.print(F(" ("));
+    Serial.print(m - startTime);
+    Serial.print(F(") > "));
+    Serial.println(SEQUENCE_TIME);
+#endif
     if (++pi >= NUM_PATTERNS) pi = 0;
     startTime = m;
     tt = 0;
