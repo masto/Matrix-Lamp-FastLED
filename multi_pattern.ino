@@ -205,6 +205,7 @@ void setup() {
   Serial.begin(115200);
   Serial.print(F("NUM_PATTERNS = "));
   Serial.println(NUM_PATTERNS);
+  Serial.flush();
 #endif
   delay(1000);
   FastLED.addLeds<WS2812B, DATA_PIN, GRB>(leds, NUM_LEDS);
@@ -220,6 +221,7 @@ void loop() {
 #if DEBUG_ENABLE
     Serial.print(F("Starting pattern "));
     Serial.println(pi);
+    Serial.flush();
 #endif
     fill_solid(leds, NUM_LEDS, CRGB::Black);
     randomSeed(analogRead(0));
@@ -257,6 +259,7 @@ void loop() {
     Serial.print(m - startTime);
     Serial.print(F(") > "));
     Serial.println(SEQUENCE_TIME);
+    Serial.flush();
 #endif
     if (++pi >= NUM_PATTERNS) pi = 0;
     startTime = m;
