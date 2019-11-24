@@ -1,3 +1,4 @@
+#include <assert.h>
 #include <FastLED.h>
 
 #define DATA_PIN 6
@@ -13,6 +14,9 @@ CRGB leds[NUM_LEDS];
 int16_t xt = 0;  // Used for horizontal scrolling effects
 uint16_t ht = 0; // Used for color cycling
 uint16_t tt = 0; // Frame count to feed into the above
+
+// Shared buffer for patterns that need scratch arrays
+uint8_t data[NUM_LEDS];
 
 // Global utilities
 inline uint16_t mapY(uint8_t x, uint8_t y) {
@@ -79,7 +83,10 @@ uint16_t wander(uint16_t p) {
   return mapXY(x, y);
 }
 
-uint16_t wars[NUM_WANDERERS];
+uint16_t *wars = (uint16_t *)data;
+static_assert(
+  sizeof(typeof(*wars)) * NUM_WANDERERS <=
+  sizeof(data), "out_of_memory");
 
 void setupWander() {
   for (uint8_t i = 0; i < NUM_WANDERERS; i++) wars[i] = random(NUM_LEDS);
@@ -145,9 +152,14 @@ unsigned long beforeBounce() {
 }
 
 // PATTERN: Rain
-int16_t cols[WIDTH];
-uint8_t speed[WIDTH];
-uint8_t color[WIDTH];
+int16_t *cols = (int16_t *)data;
+uint8_t *speed = (uint8_t *)(cols + WIDTH);
+uint8_t *color = (uint8_t *)(speed + WIDTH);
+static_assert(
+  sizeof(typeof(*cols)) * WIDTH +
+  sizeof(typeof(*speed)) * WIDTH +
+  sizeof(typeof(*color)) * WIDTH <=
+  sizeof(data), "out_of_memory");
 
 void setupRain() {
   for (uint8_t x = 0; x < WIDTH; x++) {
