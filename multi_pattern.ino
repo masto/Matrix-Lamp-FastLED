@@ -206,6 +206,7 @@ void setup() {
   Serial.print(F("NUM_PATTERNS = "));
   Serial.println(NUM_PATTERNS);
 #endif
+  delay(1000);
   FastLED.addLeds<WS2812B, DATA_PIN, GRB>(leds, NUM_LEDS);
   FastLED.setBrightness(30);
   startTime = millis();
