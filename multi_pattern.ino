@@ -16,7 +16,7 @@ uint16_t ht = 0; // Used for color cycling
 uint16_t tt = 0; // Frame count to feed into the above
 
 // Shared buffer for patterns that need scratch arrays
-uint8_t data[NUM_LEDS];
+uint16_t data[NUM_LEDS];
 
 // Global utilities
 inline uint16_t mapY(uint8_t x, uint8_t y) {
@@ -192,6 +192,40 @@ void renderRain(uint16_t index, uint16_t x, int16_t y) {
   leds[index] = CHSV(h, s, cols[x] == y ? v : 0);
 }
 
+// PATTERN: BlinkFade
+uint8_t *bfVals = (uint8_t *)data;
+uint8_t *bfHues = (uint8_t *)(bfVals + NUM_LEDS);
+static_assert(
+  sizeof(typeof(*bfVals)) * NUM_LEDS +
+  sizeof(typeof(*bfHues)) * NUM_LEDS <=
+  sizeof(data), "out_of_memory");
+
+void setupBlinkFade() {
+  for (uint16_t i = 0; i < NUM_LEDS; i++) {
+    bfVals[i] = 0;
+  }
+}
+
+unsigned long beforeBlinkFade() {
+  ht += 1;
+
+  for (uint16_t i = 0; i < NUM_LEDS; i++) {
+    bfVals[i] = qsub8(bfVals[i], 1);
+    if (bfVals[i] == 0) {
+      bfVals[i] = random(256);
+      bfHues[i] = ht / 2 + i / 5;
+    }
+  }
+
+  return 0;
+}
+
+void renderBlinkFade(uint16_t index, uint16_t x, int16_t y) {
+  uint8_t v = bfVals[index];
+  leds[index] = CHSV(bfHues[index], 255, v);
+}
+
+
 // Pattern catalog
 struct pattern {
   void (*setup)(void);
@@ -200,11 +234,12 @@ struct pattern {
 };
 
 pattern patterns[] = {
-  { NULL,         beforeBounce,  NULL },
-  { NULL,         beforeSinus,   renderSinus },
-  { setupWander,  beforeWander,  NULL },
-  { NULL,         beforeSlideUp, NULL },
-  { setupRain,    beforeRain,    renderRain }
+  { NULL,           beforeBounce,    NULL },
+  { NULL,           beforeSinus,     renderSinus },
+  { setupWander,    beforeWander,    NULL },
+  { NULL,           beforeSlideUp,   NULL },
+  { setupRain,      beforeRain,      renderRain },
+  { setupBlinkFade, beforeBlinkFade, renderBlinkFade }
 };
 
 const size_t NUM_PATTERNS = sizeof patterns / sizeof *patterns;
