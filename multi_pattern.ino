@@ -198,12 +198,13 @@ pattern patterns[] = {
 const size_t NUM_PATTERNS = sizeof patterns / sizeof *patterns;
 
 // Driver program
-size_t pi = 0;
+size_t pi;
 unsigned long startTime;
 void setup() {
   FastLED.addLeds<WS2812B, DATA_PIN, GRB>(leds, NUM_LEDS);
   FastLED.setBrightness(30);
   startTime = millis();
+  pi = random(NUM_PATTERNS);
 }
 
 void loop() {
