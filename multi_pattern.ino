@@ -234,8 +234,8 @@ void loop() {
   tt += 1;
 
   unsigned long m = millis();
-  if (m - startTime >= SEQUENCE_TIME) {
-    if (++pi > NUM_PATTERNS) pi = 0;
+  if (m - startTime > SEQUENCE_TIME) {
+    if (++pi >= NUM_PATTERNS) pi = 0;
     startTime = m;
     tt = 0;
   }
