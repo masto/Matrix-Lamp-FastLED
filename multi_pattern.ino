@@ -340,7 +340,6 @@ void setup() {
   Serial.println(NUM_PATTERNS);
   Serial.flush();
 #endif
-  delay(1000);
   createTrulyRandomSeed();
   FastLED.addLeds<WS2812B, DATA_PIN, GRB>(leds, NUM_LEDS);
   FastLED.setBrightness(30);
