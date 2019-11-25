@@ -1,4 +1,7 @@
 #include <assert.h>
+#include <avr/interrupt.h>
+#include <avr/wdt.h>
+#include <util/atomic.h>
 #include <FastLED.h>
 
 #define DATA_PIN 6
@@ -30,6 +33,41 @@ inline uint16_t mapXY(uint8_t x, uint8_t y) {
 void toXY(uint16_t index, uint8_t &x, uint8_t &y) {
   x = index / HEIGHT;
   y = mapY(x, index % HEIGHT);
+}
+
+// https://sites.google.com/site/astudyofentropy/project-definition/timer-jitter-entropy-sources/entropy-library/arduino-random-seed
+volatile uint32_t seed;
+volatile int8_t nrot;
+void createTrulyRandomSeed() {
+  seed = 0;
+  nrot = 32; // Must be at least 4, but more increased the uniformity of the produced
+             // seeds entropy.
+
+  // The following five lines of code turn on the watch dog timer interrupt to create
+  // the seed value
+  cli();
+  MCUSR = 0;
+  _WD_CONTROL_REG |= (1<<_WD_CHANGE_BIT) | (1<<WDE);
+  _WD_CONTROL_REG = (1<<WDIE);
+  sei();
+
+  while (nrot > 0);  // wait here until seed is created
+
+  // The following five lines turn off the watch dog timer interrupt
+  cli();
+  MCUSR = 0;
+  _WD_CONTROL_REG |= (1<<_WD_CHANGE_BIT) | (0<<WDE);
+  _WD_CONTROL_REG = (0<< WDIE);
+  sei();
+
+  randomSeed(seed);
+}
+
+ISR(WDT_vect)
+{
+  nrot--;
+  seed = seed << 8;
+  seed = seed ^ TCNT1L;
 }
 
 // PATTERN: Sinus
@@ -303,10 +341,10 @@ void setup() {
   Serial.flush();
 #endif
   delay(1000);
+  createTrulyRandomSeed();
   FastLED.addLeds<WS2812B, DATA_PIN, GRB>(leds, NUM_LEDS);
   FastLED.setBrightness(30);
   startTime = millis();
-  randomSeed(analogRead(0));
   pi = random(NUM_PATTERNS);
 }
 
@@ -319,7 +357,6 @@ void loop() {
     Serial.flush();
 #endif
     fill_solid(leds, NUM_LEDS, CRGB::Black);
-    randomSeed(analogRead(0));
     if (*patterns[pi].setup) (*patterns[pi].setup)();
   }
 
