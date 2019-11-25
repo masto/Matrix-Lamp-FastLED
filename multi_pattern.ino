@@ -123,6 +123,20 @@ unsigned long beforeSlideUp() {
 // PATTERN: Bounce
 int16_t cx = 0, cy = 0, cx2 = 0, cy2 = HEIGHT - 1;
 int8_t dx = 1, dy = 1, dx2 = 1, dy2 = -1;
+
+void setupBounce() {
+  cx = 0;
+  cy = 0;
+  cx2 = 0;
+  cy2 = HEIGHT - 1;
+
+  dx = 1;
+  dy = 1;
+  dx2 = 1;
+  dy2 = -1;
+
+  xt = 0;
+}
 unsigned long beforeBounce() {
   if (++xt > 8) {
     xt = 0;
@@ -234,7 +248,7 @@ struct pattern {
 };
 
 pattern patterns[] = {
-  { NULL,           beforeBounce,    NULL },
+  { setupBounce,    beforeBounce,    NULL },
   { NULL,           beforeSinus,     renderSinus },
   { setupWander,    beforeWander,    NULL },
   { NULL,           beforeSlideUp,   NULL },
