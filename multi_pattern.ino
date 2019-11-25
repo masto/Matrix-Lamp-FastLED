@@ -239,6 +239,39 @@ void renderBlinkFade(uint16_t index, uint16_t x, int16_t y) {
   leds[index] = CHSV(bfHues[index], 255, v);
 }
 
+// PATTERN: Shuffle
+#define SHUFFLE_LEDS 40
+uint16_t *shOrder = (uint16_t *)data;
+uint8_t *shHues = (uint8_t *)(shOrder + SHUFFLE_LEDS);
+static_assert(
+  sizeof(typeof(*shOrder)) * SHUFFLE_LEDS +
+  sizeof(typeof(*shHues)) * SHUFFLE_LEDS <=
+  sizeof(data), "out_of_memory");
+
+void setupShuffle() {
+  // Use xt for pointer to end of pixel list
+  xt = 0;
+  for (uint16_t i = 0; i < SHUFFLE_LEDS; i++) {
+    shOrder[i] = i;
+    shHues[i] = 1 + i * 10; // XXX 0
+  }
+}
+
+unsigned long beforeShuffle() {
+  uint16_t tail = xt + 1;
+  if (tail >= SHUFFLE_LEDS) tail = 0;
+
+  leds[shOrder[tail]] = CRGB::Black;
+  leds[shOrder[xt]] = CHSV(shHues[xt], 150, 255);
+
+  xt = tail;
+
+  shOrder[xt] = random(NUM_LEDS);
+  shHues[xt] = random(256);
+
+  return 30;
+}
+
 
 // Pattern catalog
 struct pattern {
@@ -253,7 +286,8 @@ pattern patterns[] = {
   { setupWander,    beforeWander,    NULL },
   { NULL,           beforeSlideUp,   NULL },
   { setupRain,      beforeRain,      renderRain },
-  { setupBlinkFade, beforeBlinkFade, renderBlinkFade }
+  { setupBlinkFade, beforeBlinkFade, renderBlinkFade },
+  { setupShuffle,   beforeShuffle,   NULL }
 };
 
 const size_t NUM_PATTERNS = sizeof patterns / sizeof *patterns;
