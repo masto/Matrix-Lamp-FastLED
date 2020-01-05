@@ -15,6 +15,7 @@ CRGB leds[NUM_LEDS];
 
 // For efficient memory usage, these are globals shared among patterns.
 int16_t xt = 0;  // Used for horizontal scrolling effects
+int16_t yt = 0;  // Used for vertical scrolling effects
 uint16_t ht = 0; // Used for color cycling
 uint16_t tt = 0; // Frame count to feed into the above
 
@@ -71,9 +72,6 @@ ISR(WDT_vect)
 }
 
 // PATTERN: Sinus
-const uint16_t xScale = 65536 / WIDTH;
-const uint16_t yScale = 16384 / HEIGHT;
-
 unsigned long beforeSinus() {
   xt = sin16(tt * 40) * 4;
   ht += 15;
@@ -82,6 +80,9 @@ unsigned long beforeSinus() {
 }
 
 void renderSinus(uint16_t index, uint16_t x, int16_t y) {
+  const uint16_t xScale = 65536 / WIDTH;
+  const uint16_t yScale = 16384 / HEIGHT;
+
   x *= xScale;
   y *= yScale;
 
@@ -310,6 +311,24 @@ unsigned long beforeShuffle() {
   return 30;
 }
 
+// PATTERN: WavesInSpace
+unsigned long beforeWavesInSpace() {
+  xt = sin8(tt / 5) + sin8(tt / 4) * 4 + sin8(tt / 3);
+  yt = sin8(tt / 3) / 2 + sin8(tt / 4) / 2 + sin8(tt / 5);
+  ht += 3;
+
+  return 0;
+}
+
+void renderWavesInSpace(uint16_t index, uint16_t x, int16_t y) {
+  const uint16_t xScale = 256 / WIDTH;
+  const uint16_t yScale = 256 / HEIGHT;
+
+  uint16_t v = (uint16_t)triwave8(x * 4 * xScale + xt) * (uint16_t)triwave8(y * yScale + yt);
+  if (v < 25000) v = 0;
+
+  leds[index] = CHSV(x * 6 + sin8(ht >> 6), 255, v >> 8);
+}
 
 // Pattern catalog
 struct pattern {
@@ -319,13 +338,14 @@ struct pattern {
 };
 
 pattern patterns[] = {
-  { setupBounce,    beforeBounce,    NULL },
-  { NULL,           beforeSinus,     renderSinus },
-  { setupWander,    beforeWander,    NULL },
-  { NULL,           beforeSlideUp,   NULL },
-  { setupRain,      beforeRain,      renderRain },
-  { setupBlinkFade, beforeBlinkFade, renderBlinkFade },
-  { setupShuffle,   beforeShuffle,   NULL }
+  { setupBounce,    beforeBounce,        NULL },
+  { NULL,           beforeSinus,         renderSinus },
+  { setupWander,    beforeWander,        NULL },
+  { NULL,           beforeSlideUp,       NULL },
+  { setupRain,      beforeRain,          renderRain },
+  { setupBlinkFade, beforeBlinkFade,     renderBlinkFade },
+  { setupShuffle,   beforeShuffle,       NULL },
+  { NULL,           beforeWavesInSpace,  renderWavesInSpace },
 };
 
 const size_t NUM_PATTERNS = sizeof patterns / sizeof *patterns;
